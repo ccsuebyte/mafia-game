@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Mafia Lobby</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+<style>
+
+body{
+font-family:system-ui;
+background:#0f0f0f;
+color:white;
+text-align:center;
+margin:0;
+padding:20px;
+}
+
+button{
+padding:12px 18px;
+border:none;
+border-radius:10px;
+background:#ff5252;
+color:white;
+font-size:16px;
+margin:6px;
+}
+
+input{
+padding:10px;
+border-radius:10px;
+border:none;
+margin:5px;
+}
+
+.card{
+background:#1c1c1c;
+border-radius:12px;
+padding:10px;
+margin:6px;
+}
+
+.player{
+padding:10px;
+background:#242424;
+margin:5px;
+border-radius:8px;
+}
+
+.dead{
+opacity:.4;
+}
+
+.hidden{
+display:none;
+}
+
+.role{
+font-size:22px;
+margin:10px;
+}
+
+.timer{
+font-size:40px;
+margin:10px;
+}
+
+.phase{
+font-size:22px;
+margin:10px;
+}
+
+.voteBtn{
+width:100%;
+background:#3a3a3a;
+}
+
+</style>
+
+</head>
+<body>
+
+<h1>MAFIA</h1>
+
+<div id="join">
+
+<input id="room" placeholder="Room Code"><br>
+<input id="name" placeholder="Your Name"><br>
+
+<button onclick="join()">Join Lobby</button>
+
+</div>
+
+<div id="lobby" class="hidden">
+
+<h2>Lobby</h2>
+
+<div id="players"></div>
+
+<button id="startBtn" onclick="startGame()" class="hidden">
+Start Game
+</button>
+
+</div>
+
+<div id="game" class="hidden">
+
+<div class="role" id="role"></div>
+
+<div class="phase" id="phase"></div>
+
+<div class="timer" id="timer"></div>
+
+<div id="action"></div>
+
+<div id="result"></div>
+
+</div>
+
+<script>
+
+const firebaseConfig={
+apiKey:"YOURKEY",
+authDomain:"YOURAPP.firebaseapp.com",
+databaseURL:"https://YOURAPP.firebaseio.com",
+projectId:"YOURAPP"
+}
+
+firebase.initializeApp(firebaseConfig)
+const db=firebase.database()
+
+let room
+let playerId
+let role
+let alive=true
+
+function join(){
+
+room=document.getElementById("room").value
+let name=document.getElementById("name").value
+
+playerId=Math.random().toString(36).slice(2)
+
+db.ref("rooms/"+room+"/players/"+playerId).set({
+name:name,
+alive:true
+})
+
+document.getElementById("join").classList.add("hidden")
+document.getElementById("lobby").classList.remove("hidden")
+
+listen()
+
+}
+
+function listen(){
+
+db.ref("rooms/"+room).on("value",snap=>{
+
+let data=snap.val()
+
+if(!data) return
+
+let players=data.players||{}
+
+renderPlayers(players)
+
+let count=Object.keys(players).length
+
+if(count>=4 && !data.started){
+document.getElementById("startBtn").classList.remove("hidden")
+}
+
+if(data.started){
+document.getElementById("lobby").classList.add("hidden")
+document.getElementById("game").classList.remove("hidden")
+}
+
+if(players[playerId] && players[playerId].role){
+role=players[playerId].role
+document.getElementById("role").innerText="You are: "+role
+}
+
+})
+
+}
+
+function renderPlayers(players){
+
+let html=""
+
+Object.keys(players).forEach(id=>{
+
+let p=players[id]
+
+html+=`
+<div class="player ${p.alive?"":"dead"}">
+${p.name}
+</div>
+`
+
+})
+
+document.getElementById("players").innerHTML=html
+
+}
+
+function startGame(){
+
+db.ref("rooms/"+room+"/started").set(true)
+
+assignRoles()
+
+startPhases()
+
+}
+
+function assignRoles(){
+
+db.ref("rooms/"+room+"/players").once("value",snap=>{
+
+let players=snap.val()
+
+let ids=Object.keys(players)
+
+let mafiaCount=ids.length>5?2:1
+
+let roles=[]
+
+for(let i=0;i<mafiaCount;i++) roles.push("Mafia")
+
+roles.push("Police")
+roles.push("Doctor")
+
+while(roles.length<ids.length) roles.push("Citizen")
+
+roles.sort(()=>Math.random()-0.5)
+
+ids.forEach((id,i)=>{
+db.ref("rooms/"+room+"/players/"+id+"/role").set(roles[i])
+})
+
+})
+
+}
+
+let phases=[
+{label:"Mafia Meeting",time:60},
+{label:"Vote a Mafia",time:120},
+{label:"Mafia Kill",time:60},
+{label:"Reveal",time:10}
+]
+
+let phaseIndex=0
+let rounds=0
+
+function startPhases(){
+
+db.ref("rooms/"+room+"/players").once("value",snap=>{
+
+let count=Object.keys(snap.val()).length
+
+rounds=count>=6?3:2
+
+nextPhase()
+
+})
+
+}
+
+function nextPhase(){
+
+if(rounds<=0){
+endGame()
+return
+}
+
+if(phaseIndex>=phases.length){
+phaseIndex=1
+rounds--
+}
+
+let p=phases[phaseIndex]
+
+document.getElementById("phase").innerText=p.label
+
+startTimer(p.time)
+
+phaseIndex++
+
+}
+
+function startTimer(sec){
+
+let t=sec
+
+let timer=setInterval(()=>{
+
+document.getElementById("timer").innerText=t
+
+t--
+
+if(t<0){
+clearInterval(timer)
+nextPhase()
+}
+
+},1000)
+
+}
+
+function endGame(){
+
+document.getElementById("phase").innerText="Game Over"
+
+}
+
+</script>
+
+</body>
+</html>
