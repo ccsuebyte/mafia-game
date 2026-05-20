@@ -1,173 +1,335 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Mafia Game</title>
+# Responsive Mafia Party Game (Version 4)
 
-<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+Save this entire file as:
+
+```html
+index.html
+```
+
+Then upload it to your GitHub repository.
+
+---
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mafia Party</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
 
-body{
-font-family:system-ui;
-background:#0f0f0f;
-color:white;
-text-align:center;
-padding:20px;
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
 }
 
-button{
-padding:10px 16px;
-margin:5px;
-border-radius:10px;
-border:none;
-background:#ff4d4d;
-color:white;
+body{
+font-family:'Outfit',sans-serif;
+background:#f4efe7;
+color:#3c3c3c;
+min-height:100vh;
+padding:24px;
+display:flex;
+justify-content:center;
+}
+
+.app{
+width:100%;
+max-width:700px;
+}
+
+.card{
+background:white;
+border-radius:28px;
+padding:24px;
+box-shadow:0 10px 30px rgba(0,0,0,0.06);
+margin-bottom:20px;
+}
+
+.title{
+font-size:48px;
+font-weight:700;
+text-align:center;
+margin-bottom:8px;
+color:#6f4e37;
+}
+
+.subtitle{
+text-align:center;
+font-size:16px;
+color:#7b7b7b;
+margin-bottom:24px;
 }
 
 input{
-padding:10px;
-margin:5px;
-border-radius:8px;
+width:100%;
+padding:16px;
 border:none;
+background:#f4f1ec;
+border-radius:16px;
+font-size:16px;
+margin-bottom:12px;
+font-family:'Outfit',sans-serif;
+}
+
+button{
+width:100%;
+padding:16px;
+border:none;
+border-radius:16px;
+background:#8d6e63;
+color:white;
+font-size:16px;
+font-weight:600;
+font-family:'Outfit',sans-serif;
+cursor:pointer;
+transition:0.2s;
+}
+
+button:hover{
+opacity:0.9;
+}
+
+.section-title{
+font-size:24px;
+font-weight:700;
+margin-bottom:18px;
+}
+
+.player-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+gap:12px;
 }
 
 .player{
-background:#1f1f1f;
-padding:10px;
-margin:5px;
-border-radius:8px;
+background:#f8f4ef;
+padding:16px;
+border-radius:18px;
+text-align:center;
+font-weight:600;
+}
+
+.dead{
+opacity:0.5;
+text-decoration:line-through;
+}
+
+.role-card{
+background:#efe7dd;
+padding:18px;
+border-radius:20px;
+margin-bottom:20px;
+text-align:center;
+}
+
+.role-title{
+font-size:14px;
+text-transform:uppercase;
+letter-spacing:2px;
+color:#7c6b5d;
+margin-bottom:8px;
+}
+
+.role-name{
+font-size:34px;
+font-weight:700;
+}
+
+.phase{
+text-align:center;
+font-size:28px;
+font-weight:700;
+margin-bottom:10px;
 }
 
 .timer{
-font-size:40px;
-margin:10px;
+text-align:center;
+font-size:72px;
+font-weight:700;
+color:#8d6e63;
+margin-bottom:24px;
+}
+
+.vote-grid{
+display:grid;
+grid-template-columns:1fr;
+gap:10px;
+}
+
+.vote-btn{
+background:#f4f1ec;
+color:#444;
+}
+
+.vote-btn:hover{
+background:#e9dfd4;
+}
+
+.result{
+background:#fff7e8;
+padding:18px;
+border-radius:18px;
+margin-top:20px;
+text-align:center;
+font-size:18px;
+font-weight:600;
+}
+
+.hidden{
+display:none;
+}
+
+@media(max-width:600px){
+
+body{
+padding:14px;
+}
+
+.title{
+font-size:38px;
+}
+
+.timer{
+font-size:58px;
+}
+
+.card{
+padding:18px;
+}
+
 }
 
 </style>
-
 </head>
-
 <body>
 
-<h1>MAFIA</h1>
+<div class="app">
 
-<div id="join">
+<div class="card" id="joinCard">
 
-<input id="room" placeholder="Room Code"><br>
-<input id="name" placeholder="Your Name"><br>
+<div class="title">MAFIA</div>
+<div class="subtitle">Party game for game nights</div>
 
-<button onclick="join()">Join Game</button>
+<input id="roomInput" placeholder="Enter room code">
+<input id="nameInput" placeholder="Enter your name">
+
+<button onclick="joinLobby()">Join Lobby</button>
 
 </div>
 
-<div id="lobby" style="display:none">
+<div class="card hidden" id="lobbyCard">
 
-<h2>Lobby</h2>
+<div class="section-title">Lobby</div>
 
-<div id="players"></div>
+<div class="player-grid" id="playerGrid"></div>
 
+<div style="margin-top:18px;">
 <button onclick="startGame()">Start Game</button>
+</div>
 
 </div>
 
-<div id="game" style="display:none">
+<div class="card hidden" id="gameCard">
 
-<h2 id="role"></h2>
+<div class="role-card">
+<div class="role-title">Your Role</div>
+<div class="role-name" id="roleName">Citizen</div>
+</div>
 
-<h3 id="phase"></h3>
+<div class="phase" id="phaseText">Waiting...</div>
+<div class="timer" id="timerText">60</div>
 
-<div class="timer" id="timer"></div>
+<div class="vote-grid" id="voteArea"></div>
 
-<div id="voteArea"></div>
+<div class="result hidden" id="resultBox"></div>
+
+</div>
 
 </div>
 
 <script>
 
-let peer
-let connections=[]
-let players={}
-let playerId=Math.random().toString(36).slice(2)
-let name
-let room
+let roomCode=''
+let myName=''
+let myRole='Citizen'
+let players=[]
+let currentRound=1
+let totalRounds=2
+let currentPhase=0
 
-function join(){
+const phases=[
+{
+name:'Mafia Meeting',
+time:60
+},
+{
+name:'Vote the Mafia',
+time:120
+},
+{
+name:'Mafia Chooses Victim',
+time:60
+},
+{
+name:'Results',
+time:15
+}
+]
 
-name=document.getElementById("name").value
-room=document.getElementById("room").value
+function joinLobby(){
 
-peer=new Peer(room+"-"+playerId)
+roomCode=document.getElementById('roomInput').value.trim()
+myName=document.getElementById('nameInput').value.trim()
 
-peer.on("open",id=>{
-
-document.getElementById("join").style.display="none"
-document.getElementById("lobby").style.display="block"
-
-players[id]={name:name}
-
-updatePlayers()
-
-})
-
-peer.on("connection",conn=>{
-
-connections.push(conn)
-
-conn.on("data",data=>{
-
-if(data.type==="join"){
-players[data.id]=data.player
-updatePlayers()
-broadcast()
+if(!roomCode || !myName){
+alert('Enter room code and name')
+return
 }
 
-})
+const roomKey='mafia_'+roomCode
 
-})
+let existing=JSON.parse(localStorage.getItem(roomKey)||'[]')
 
-setTimeout(connectToRoom,1000)
-
+if(!existing.includes(myName)){
+existing.push(myName)
 }
 
-function connectToRoom(){
+localStorage.setItem(roomKey,JSON.stringify(existing))
 
-let conn=new Peer().connect(room+"-host")
+syncPlayers()
 
-conn.on("open",()=>{
+setInterval(syncPlayers,1000)
 
-conn.send({
-type:"join",
-id:playerId,
-player:{name:name}
-})
-
-})
+document.getElementById('joinCard').classList.add('hidden')
+document.getElementById('lobbyCard').classList.remove('hidden')
 
 }
 
-function updatePlayers(){
+function syncPlayers(){
 
-let html=""
+const roomKey='mafia_'+roomCode
 
-Object.values(players).forEach(p=>{
+players=JSON.parse(localStorage.getItem(roomKey)||'[]')
 
-html+=`<div class="player">${p.name}</div>`
+const grid=document.getElementById('playerGrid')
 
-})
+grid.innerHTML=''
 
-document.getElementById("players").innerHTML=html
+players.forEach(player=>{
 
-}
+const div=document.createElement('div')
+div.className='player'
+div.innerText=player
 
-function broadcast(){
-
-connections.forEach(c=>{
-
-c.send({
-type:"update",
-players:players
-})
+grid.appendChild(div)
 
 })
 
@@ -175,57 +337,177 @@ players:players
 
 function startGame(){
 
-let ids=Object.keys(players)
+assignRoles()
+
+if(players.length >= 6){
+totalRounds=3
+}else{
+totalRounds=2
+}
+
+currentRound=1
+currentPhase=0
+
+startPhase()
+
+}
+
+function assignRoles(){
 
 let roles=[]
 
-let mafiaCount=ids.length>5?2:1
+let mafiaCount=players.length > 5 ? 2 : 1
 
-for(let i=0;i<mafiaCount;i++) roles.push("Mafia")
+for(let i=0;i<mafiaCount;i++){
+roles.push('Mafia')
+}
 
-roles.push("Police")
-roles.push("Doctor")
+roles.push('Police')
+roles.push('Doctor')
 
-while(roles.length<ids.length) roles.push("Citizen")
+while(roles.length < players.length){
+roles.push('Citizen')
+}
 
 roles.sort(()=>Math.random()-0.5)
 
-ids.forEach((id,i)=>{
+const assignments={}
 
-players[id].role=roles[i]
-
+players.forEach((player,index)=>{
+assignments[player]=roles[index]
 })
 
-let myRole=players[peer.id].role
+myRole=assignments[myName]
 
-document.getElementById("role").innerText="You are: "+myRole
+document.getElementById('roleName').innerText=myRole
 
-document.getElementById("lobby").style.display="none"
-document.getElementById("game").style.display="block"
-
-startTimer("Mafia Meeting",60)
+document.getElementById('lobbyCard').classList.add('hidden')
+document.getElementById('gameCard').classList.remove('hidden')
 
 }
 
-function startTimer(label,time){
+function startPhase(){
 
-document.getElementById("phase").innerText=label
+if(currentRound > totalRounds){
+endGame()
+return
+}
 
-let t=time
+if(currentPhase >= phases.length){
+currentPhase=1
+currentRound++
+}
 
-let interval=setInterval(()=>{
+const phase=phases[currentPhase]
 
-document.getElementById("timer").innerText=t
+document.getElementById('phaseText').innerText=
+`Round ${currentRound} • ${phase.name}`
 
-t--
+runTimer(phase.time)
 
-if(t<0){
+renderVoteArea(phase.name)
 
+currentPhase++
+
+}
+
+function runTimer(seconds){
+
+let remaining=seconds
+
+const timer=document.getElementById('timerText')
+
+timer.innerText=remaining
+
+const interval=setInterval(()=>{
+
+remaining--
+
+timer.innerText=remaining
+
+if(remaining <= 0){
 clearInterval(interval)
-
+showResults()
+setTimeout(startPhase,2000)
 }
 
 },1000)
+
+}
+
+function renderVoteArea(phaseName){
+
+const area=document.getElementById('voteArea')
+
+area.innerHTML=''
+
+if(
+phaseName === 'Vote the Mafia' ||
+phaseName === 'Mafia Chooses Victim'
+){
+
+players.forEach(player=>{
+
+if(player !== myName){
+
+const btn=document.createElement('button')
+btn.className='vote-btn'
+btn.innerText=player
+
+btn.onclick=()=>{
+
+localStorage.setItem(
+'mafia_vote_'+roomCode,
+player
+)
+
+Array.from(area.children).forEach(child=>{
+child.style.border='none'
+})
+
+btn.style.border='3px solid #8d6e63'
+
+}
+
+area.appendChild(btn)
+
+}
+
+})
+
+}
+
+}
+
+function showResults(){
+
+const box=document.getElementById('resultBox')
+
+const voted=localStorage.getItem('mafia_vote_'+roomCode)
+
+if(voted){
+box.innerText=`${voted} has been selected.`
+}else{
+box.innerText='No selection made.'
+}
+
+box.classList.remove('hidden')
+
+setTimeout(()=>{
+box.classList.add('hidden')
+},4000)
+
+}
+
+function endGame(){
+
+const phase=document.getElementById('phaseText')
+const timer=document.getElementById('timerText')
+const area=document.getElementById('voteArea')
+
+phase.innerText='Game Over'
+timer.innerText='🎉'
+area.innerHTML=''
 
 }
 
@@ -233,3 +515,48 @@ clearInterval(interval)
 
 </body>
 </html>
+```
+
+---
+
+# Important Note
+
+This version uses `localStorage`, which means:
+
+* It works best if everyone is using the SAME device/browser session OR
+* You are testing locally on one device.
+
+For true multiplayer syncing across phones, you'll still need a realtime backend like Firebase or Supabase.
+
+However, this version gives you:
+
+* responsive design
+* softer colors
+* cleaner UI
+* visible joining players
+* better mobile experience
+* improved typography
+* easier gameplay flow
+
+---
+
+# Upload Instructions (iPhone)
+
+1. Open your GitHub repo
+2. Open:
+
+```html
+index.html
+```
+
+3. Delete old code
+4. Paste this entire new code
+5. Commit changes
+6. Wait ~30 seconds
+7. Refresh your GitHub Pages link
+
+Your link:
+
+```txt
+https://YOURUSERNAME.github.io/mafia-game
+```
